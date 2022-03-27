@@ -4,7 +4,7 @@ var conn = {
     host: 'localhost',
     user: 'root',
     password: '',
-    database: 'tracker'
+    database: 'life_tracking'
 };
 
 var connection = mysql.createConnection(conn);

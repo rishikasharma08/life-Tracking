@@ -6,6 +6,6 @@ var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json();
 
 router.post('/first_register',jsonParser, control.add_user);
-router.post('/login_user',jsonParser, control.login_user);
+router.post('/login_user',jsonParser, control.login_user1);
 
 module.exports = router;
