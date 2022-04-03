@@ -8,5 +8,7 @@ var jsonParser = bodyParser.json();
 router.post('/first_register',jsonParser, control.add_user);
 router.post('/login_user',jsonParser, control.login_user);
 router.post('/user_health',jsonParser, control.healthData);
+router.post('/user_sleep',jsonParser, control.sleepData);
+router.post('/user_water',jsonParser, control.waterData);
 
 module.exports = router;

@@ -82,4 +82,58 @@ const healthData = (req, res) => {
 
 }
 
-module.exports = { add_user, login_user, healthData }
+//sleep track data
+const sleepData = (req,res) => {
+    let data = {
+        user_id: req.body.user_id,
+        sleep_time: req.body.sleep_time,
+        wakeup_time: req.body.wakeup_time
+    }
+    let sleep = `INSERT INTO sleep_track(user_id, sleep_time,wakeup_time) VALUES (?,?,?)`;
+    let ifSleep = connection.query(sleep,[data.user_id, data.sleep_time, data.wakeup_time]);
+
+    if(ifSleep){
+        res.send("Successfully Inserted");
+    }
+    else{
+        res.send("ERROR");
+    }
+}
+
+//water track data
+const waterData = (req,res) => {
+    let data = {
+        user_id: req.body.user_id,
+        water_times: req.body.water_times,
+        
+    }
+    let water = `INSERT INTO water_track(user_id, water_times) VALUES (?,?)`;
+    let ifWater = connection.query(water,[data.user_id, data.water_times]);
+
+    if(ifWater){
+        res.send("Successfully Inserted");
+    }
+    else{
+        res.send("ERROR");
+    }
+}
+
+//diet track data
+// const dietData = (req,res) => {
+//     let data = {
+//         user_id: req.body.user_id,
+//         water_times: req.body.water_times,
+        
+//     }
+//     let water = `INSERT INTO water_track(user_id, water_times) VALUES (?,?)`;
+//     let ifWater = connection.query(water,[data.user_id, data.water_times]);
+
+//     if(ifWater){
+//         res.send("Successfully Inserted");
+//     }
+//     else{
+//         res.send("ERROR");
+//     }
+// }
+
+module.exports = { add_user, login_user, healthData, sleepData, waterData }
