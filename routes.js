@@ -5,6 +5,7 @@ const control = require("./controller");
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json();
 
+router.get('/all_users',control.allUsers);
 router.post('/first_register',jsonParser, control.add_user);
 router.post('/login_user',jsonParser, control.login_user);
 router.post('/user_health',jsonParser, control.healthData);

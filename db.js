@@ -4,8 +4,8 @@ var conn = {
     host: 'localhost',
     user: 'root',
     password: '',
-    // database: 'life_tracking'
-    database: 'tracker'
+    database: 'life_tracking'
+    // database: 'tracker'
 
 };
 

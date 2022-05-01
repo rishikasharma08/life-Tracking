@@ -10,11 +10,10 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bcrypt": "^5.0.1",
     "body-parser": "^1.19.2",
     "express": "^4.17.3",
+    "md5": "^2.3.0",
     "mysql": "^2.18.1",
-    "node-dev": "^7.4.2",
-    "password-hash": "^1.2.2"
+    "node-dev": "^7.4.2"
   }
 }
