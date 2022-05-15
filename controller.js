@@ -6,30 +6,13 @@ app.use(bodyparser.urlencoded({ extended: true }));
 const conn = require('./db');
 const connection = conn.connection;
 const md5 = require('md5');
-const http = require('http');
-const { rmSync } = require("fs");
+
 //to insert data in user profile
-
-const allUsers =  (req, res) => {
-    try {
-        let user = `SELECT * FROM user_profile`;
-        connection.query(user, (err, rows) => {
-            if(rows){
-                res.send(rows);
-            }else{
-                res.send("No data found");
-            }
-        });
-    } catch (err) {
-        console.log(err);
-    }
-}
-
 const add_user = (req, res) => {
 
     let data = {
         name: req.body.name,
-        email: req.body.email,
+        email: req.body.email && req.body.email.length > 0 ? req.body.email : "N/A",
         contact: req.body.contact,
         address: req.body.address,
         dob: req.body.dob,
@@ -38,27 +21,40 @@ const add_user = (req, res) => {
         user_token: Date.now(),
     }
     const password = md5(data.password);
-
     let findOld = `SELECT * FROM user_profile WHERE email = "${data.email}"`;
     connection.query(findOld, (err, rows) => {
         if (err) {
-            res.send(err);
-            console.log("Error while fetching the data", err);
+            res.send({ msg: "Something went wrong", error: 1 });
         }
         else if (rows.length > 0) {
-            res.send("The user email already exists. Kindly use the new email for registration");
+            res.send({ msg: "The user email already exists. Kindly use the new email for registration", error: 1 });
         }
         else {
             let user = `INSERT INTO user_profile (name, email, contact, address, dob, gender, password,user_token) VALUES (?,?,?,?,?,?,?,?)`;
-            let ifUser = connection.query(user, [data.name, data.email, data.contact, data.address, data.dob, data.gender, password, data.user_token]);
-            if (ifUser) {
-                res.send("Signed up Successfully");
-            }
-            else {
-                res.send("Something went wrong");
-            }
+            let ifUser = connection.query(user, [data.name, data.email, data.contact, data.address, data.dob, data.gender, password, data.user_token], function (err, response) {
+
+                if (err) {
+                    res.send({ msg: "Something went wrong", error: 1 });
+                }
+                else {
+                    res.send({ msg: "Signed up Successfully", error: 0, user_id: response.insertId });
+                }
+            });
         }
     })
+}
+
+//user info
+const user_info = (req, res) => {
+    let user = `SELECT user_id, email, user_token, yesHealth, yesWealth FROM useR_profile where user_id = ${req.body.id}`;
+    let ifUser = connection.query(user, (err, rows) => {
+        if (rows && rows.length > 0) {
+            res.send({ msg: "User Info Fetched successfully", error: 0, data: rows });
+        }
+        else {
+            res.send({ msg: "The user does not exist", error: 1 });
+        }
+    });
 }
 
 // user login
@@ -68,19 +64,18 @@ const login_user = (req, res) => {
         email: req.body.email,
         password: req.body.password,
     }
-    let user = `SELECT email, password from user_profile where email = "${data.email}"`;
+    let user = `SELECT user_id, email, user_token, password from user_profile where email = "${data.email}"`;
     let ifUser = connection.query(user, (err, rows) => {
         if (rows && rows.length > 0) {
             if (rows[0].password === md5(data.password)) {
-                res.send("Logged In successfully");
+                res.send({ msg: "Logged In successfully", error: 0, user_id: rows[0].user_id });
             }
             else {
-                res.send("Login error");
+                res.send({ msg: "Login Email or Password does not match", error: 1 });
             }
         }
         else {
-            console.log(err, "User does not exist");
-            res.send("The user does not exist")
+            res.send({ msg: "The user does not exist", error: 1 });
         }
     });
 }
@@ -99,17 +94,32 @@ const healthData = (req, res) => {
         health_goal: req.body.health_goal,
     }
 
-    let health = `INSERT INTO user_health ( user_id, profession, job_type, job_hours, age, weight, height, health_goal) VALUES (?,?,?,?,?,?,?,?)`;
+    let already = `SELECT * FROM user_health WHERE user_id = ${data.user_id}`;
+    connection.query(already, (err, rows) => {
+        if (err) {
+            res.send({ msg: "Something went wrong", error: 1 });
+        }
+        else if (rows.length > 0) {
+            res.send({ msg: "Your health data already exists", error: 1 });
+        }
+        else {
+            let health = `INSERT INTO user_health ( user_id, profession, job_type, job_hours, age, weight, height, health_goal) VALUES (?,?,?,?,?,?,?,?)`;
 
-    let ifHealth = connection.query(health, [data.user_id, data.profession, data.job_type, data.job_hours, data.age, data.weight, data.height, data.health_goal]);
+            let ifHealth = connection.query(health, [data.user_id, data.profession, data.job_type, data.job_hours, data.age, data.weight, data.height, data.health_goal]);
 
-    if (ifHealth) {
-        res.send("Successfully Inserted");
-    }
-    else {
-        res.send("ERROR");
-    }
-
+            if (ifHealth) {
+                let updateUser = `UPDATE user_profile set yesHealth = 1 WHERE user_id = ${data.user_id}`;
+                let ifUpdateUser = connection.query(updateUser, [], function (err, response) {
+                    if (response.affectedRows > 0) {
+                        res.send({ msg: "Your health data stored successfully", error: 0 });
+                    }
+                })
+            }
+            else {
+                res.send({ msg: "Something went wrong", error: 1 });
+            }
+        }
+    })
 }
 
 //sleep track data
@@ -148,22 +158,28 @@ const waterData = (req, res) => {
     }
 }
 
-//diet track data
-// const dietData = (req,res) => {
-//     let data = {
-//         user_id: req.body.user_id,
-//         water_times: req.body.water_times,
+// diet track data
+const user_diet = (req, res) => {
+    let data = {
+        user_id: req.body.user_id,
+        calories: req.body.calories
+    }
+    let diet = `INSERT INTO water_track(user_id, required_calories) VALUES (?,?)`;
+    let ifdiet = connection.query(diet, [data.user_id, data.calories], function (err, rows) {
+        if (err) {
+            res.send({ msg: err, error: 1 })
+        }
+        else if (rows[0].affectedRows.length > 0) {
+            res.send({ msg: "Your record is saved successfully", error: 1 })
+        }
+    });
 
-//     }
-//     let water = `INSERT INTO water_track(user_id, water_times) VALUES (?,?)`;
-//     let ifWater = connection.query(water,[data.user_id, data.water_times]);
+    if (ifWater) {
+        res.send("Successfully Inserted");
+    }
+    else {
+        res.send("ERROR");
+    }
+}
 
-//     if(ifWater){
-//         res.send("Successfully Inserted");
-//     }
-//     else{
-//         res.send("ERROR");
-//     }
-// }
-
-module.exports = { add_user, login_user, healthData, sleepData, waterData, allUsers }
+module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet }

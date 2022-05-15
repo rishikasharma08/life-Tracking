@@ -5,10 +5,11 @@ const control = require("./controller");
 var bodyParser = require('body-parser')
 var jsonParser = bodyParser.json();
 
-router.get('/all_users',control.allUsers);
 router.post('/first_register',jsonParser, control.add_user);
+router.post('/user_info',jsonParser, control.user_info);
 router.post('/login_user',jsonParser, control.login_user);
-router.post('/user_health',jsonParser, control.healthData);
+router.post('/user_diet',jsonParser, control.user_diet);
+router.post('/user_info',jsonParser, control.user_info);
 router.post('/user_sleep',jsonParser, control.sleepData);
 router.post('/user_water',jsonParser, control.waterData);
 
