@@ -46,7 +46,7 @@ const add_user = (req, res) => {
 
 //user info
 const user_info = (req, res) => {
-    let user = `SELECT user_id, email, user_token, yesHealth, yesWealth FROM useR_profile where user_id = ${req.body.id}`;
+    let user = `SELECT user_id, email, name, contact, gender, avtar_id, user_token, yesHealth, yesWealth, user_score FROM user_profile where user_id = ${req.body.id}`;
     let ifUser = connection.query(user, (err, rows) => {
         if (rows && rows.length > 0) {
             res.send({ msg: "User Info Fetched successfully", error: 0, data: rows });
