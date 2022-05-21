@@ -12,7 +12,7 @@ const add_user = (req, res) => {
 
     let data = {
         name: req.body.name,
-        email: req.body.email && req.body.email.length > 0 ? req.body.email : "N/A",
+        email: req.body.email && req.body.email.length > 0 ? req.body.email : "N/A",  //?
         contact: req.body.contact,
         address: req.body.address,
         dob: req.body.dob,
@@ -31,7 +31,7 @@ const add_user = (req, res) => {
         }
         else {
             let user = `INSERT INTO user_profile (name, email, contact, address, dob, gender, password,user_token) VALUES (?,?,?,?,?,?,?,?)`;
-            let ifUser = connection.query(user, [data.name, data.email, data.contact, data.address, data.dob, data.gender, password, data.user_token], function (err, response) {
+            let ifUser = connection.query(user, [data.name, data.email, data.contact, data.address, data.dob, data.gender, password, data.user_token], (err, response) => {
 
                 if (err) {
                     res.send({ msg: "Something went wrong", error: 1 });
@@ -113,7 +113,8 @@ const healthData = (req, res) => {
                     if (response.affectedRows > 0) {
                         res.send({ msg: "Your health data stored successfully", error: 0 });
                     }
-                })
+                }
+                )
             }
             else {
                 res.send({ msg: "Something went wrong", error: 1 });
@@ -182,4 +183,45 @@ const user_diet = (req, res) => {
     }
 }
 
-module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet }
+//user profile
+const update_user = (req, res) => {
+    let update = {
+        user_id: req.body.user_id,
+        email: req.body.email,
+        name: req.body.name,
+        contact: req.body.contact,
+        address: req.body.address
+    }
+    let find = `SELECT * FROM user_profile WHERE email = "${update.email}"`;
+    connection.query(find, (err, rows) => {
+        if (err) {
+            res.send({ msg: "Something went wrong", error: 1 });
+        }
+        else if (rows && rows.length > 0) {
+            res.send({ msg: `Email already exists: ${update.email}`, error: 1 })
+        }
+        else {
+            // name = ?, email = ?, contact = ?, address = ?
+            let extra_query = "";
+            
+
+
+
+                let upUser = `UPDATE user_profile SET ${extra_query} WHERE user_id = ${update.user_id} ;`
+            let ifUpdate = connection.query(upUser, [], function (err, response) {
+                if (err) {
+                    res.send({ msg: err, error: 1 })
+                }
+                else if (response.affectedRows > 0) {
+                    res.send({ msg: "Your record is saved successfully", error: 0 })
+                }
+                else {
+                    res.send({ msg: "Data not updated", error: 1 })
+                }
+            });
+        }
+    }
+    )
+}
+
+module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user }
