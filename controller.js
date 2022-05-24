@@ -9,7 +9,6 @@ const md5 = require('md5');
 
 //to insert data in user profile
 const add_user = (req, res) => {
-
     let data = {
         name: req.body.name,
         email: req.body.email && req.body.email.length > 0 ? req.body.email : "N/A",  //?
@@ -108,8 +107,12 @@ const healthData = (req, res) => {
             let ifHealth = connection.query(health, [data.user_id, data.profession, data.job_type, data.job_hours, data.age, data.weight, data.height, data.health_goal]);
 
             if (ifHealth) {
+                let required_cal = data.health_goal == 1 ? 1800 : data.health_goal == 2 ? 2400 : 2000;
+                let first_diet = `INSERT INTO diet_tracking (user_id, required_meals, required_calories) VALUES (?,?,?)`;
+                let if_first_diet = connection.query(first_diet, [data.user_id, 5, required_cal]);
+
                 let updateUser = `UPDATE user_profile set yesHealth = 1 WHERE user_id = ${data.user_id}`;
-                let ifUpdateUser = connection.query(updateUser, [], function (err, response) {
+                connection.query(updateUser, [], function (err, response) {
                     if (response.affectedRows > 0) {
                         res.send({ msg: "Your health data stored successfully", error: 0 });
                     }
@@ -163,24 +166,42 @@ const waterData = (req, res) => {
 const user_diet = (req, res) => {
     let data = {
         user_id: req.body.user_id,
+        meal: req.body.meal,
         calories: req.body.calories
     }
-    let diet = `INSERT INTO water_track(user_id, required_calories) VALUES (?,?)`;
-    let ifdiet = connection.query(diet, [data.user_id, data.calories], function (err, rows) {
+
+    let diet = `INSERT INTO diet_today(user_id, meal, calories) VALUES (?,?,?)`;
+    connection.query(diet, [data.user_id, data.meal, data.calories], function (err, rows) {
         if (err) {
             res.send({ msg: err, error: 1 })
         }
-        else if (rows[0].affectedRows.length > 0) {
-            res.send({ msg: "Your record is saved successfully", error: 1 })
+        else if (rows.affectedRows > 0) {
+            let if_diet = `SELECT * FROM diet_tracking WHERE user_id = ${data.user_id}`;
+            connection.query(if_diet, (e, rows) => {
+                if (e) {
+                    res.send({ msg: e, error: 1 })
+                }
+                else {
+
+                    let diet_score = ((rows[0].intake_calories + data.calories) / rows[0].required_calories) * 10;
+
+                    let update = `UPDATE diet_tracking SET intake_meals = ${rows[0].intake_meals + 1}, intake_calories = ${rows[0].intake_calories + data.calories}, diet_score = ${diet_score} WHERE user_id = ${data.user_id}`;
+
+                    connection.query(update, (er, result) => {
+                        if (result.affectedRows > 0) {
+                            res.send({ msg: "Data updated successfuly", error: 0 })
+                        }
+                        else {
+                            res.send({ msg: er, error: 1 })
+                        }
+                    })
+                }
+            })
+        }
+        else {
+            res.send({ msg: "Something went wrong", error: 1 })
         }
     });
-
-    if (ifWater) {
-        res.send("Successfully Inserted");
-    }
-    else {
-        res.send("ERROR");
-    }
 }
 
 //user profile
@@ -189,8 +210,7 @@ const update_user = (req, res) => {
         user_id: req.body.user_id,
         email: req.body.email,
         name: req.body.name,
-        contact: req.body.contact,
-        address: req.body.address
+        contact: req.body.contact
     }
     let find = `SELECT * FROM user_profile WHERE email = "${update.email}"`;
     connection.query(find, (err, rows) => {
@@ -201,13 +221,20 @@ const update_user = (req, res) => {
             res.send({ msg: `Email already exists: ${update.email}`, error: 1 })
         }
         else {
-            // name = ?, email = ?, contact = ?, address = ?
-            let extra_query = "";
-            
+            let extra_query = ``;
+            if (update && update.email != null) {
+                extra_query += ` email = "${update.email}"`
+            }
+            if (update && update.name != null) {
+                extra_query += extra_query != "" ? extra_query = `, name = "${update.name}" ` : ` name = "${update.name}"`;
+            }
 
+            if (update && update.contact != null) {
+                extra_query += extra_query != "" ? extra_query = `, contact = ${update.contact} ` : ` contact = ${update.contact}`;
+            }
 
-
-                let upUser = `UPDATE user_profile SET ${extra_query} WHERE user_id = ${update.user_id} ;`
+            let upUser = `UPDATE user_profile SET ${extra_query} WHERE user_id = ${update.user_id} ;`
+            console.log(upUser);
             let ifUpdate = connection.query(upUser, [], function (err, response) {
                 if (err) {
                     res.send({ msg: err, error: 1 })
@@ -216,7 +243,7 @@ const update_user = (req, res) => {
                     res.send({ msg: "Your record is saved successfully", error: 0 })
                 }
                 else {
-                    res.send({ msg: "Data not updated", error: 1 })
+                    res.send({ msg: "No user exists with this id", error: 1 })
                 }
             });
         }
@@ -224,4 +251,15 @@ const update_user = (req, res) => {
     )
 }
 
-module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user }
+const get_all_diet = (req, res) => {
+    let user = `SELECT * FROM diet_today where user_id = ${req.body.user_id}`;
+    let ifUser = connection.query(user, (err, rows) => {
+        if (rows && rows.length > 0) {
+            res.send({ msg: "Diet Data Fetched successfully", error: 0, data: rows });
+        }
+        else {
+            res.send({ msg: "The Data does not exist", error: 1 });
+        }
+    });
+}
+module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet }
