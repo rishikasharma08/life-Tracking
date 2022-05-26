@@ -14,6 +14,7 @@ router.post('/user_sleep', jsonParser, control.sleepData);
 router.post('/user_water', jsonParser, control.waterData);
 router.post('/update_user', jsonParser, control.update_user);
 router.post('/get_all_diet', jsonParser, control.get_all_diet);
-
+router.post('/get_water_data',jsonParser,control.get_water_data);
+router.post('/update_water_data',jsonParser,control.update_water_data);
 
 module.exports = router;

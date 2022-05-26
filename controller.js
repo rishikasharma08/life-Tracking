@@ -111,6 +111,13 @@ const healthData = (req, res) => {
                 let first_diet = `INSERT INTO diet_tracking (user_id, required_meals, required_calories) VALUES (?,?,?)`;
                 let if_first_diet = connection.query(first_diet, [data.user_id, 5, required_cal]);
 
+                let first_sleep = `INSERT INTO sleep_track (user_id, required_sleep_hours) VALUES (?,?)`;
+                let if_first_sleep = connection.query(first_sleep, [data.user_id, 8]);
+
+
+                let first_water = `INSERT INTO water_track (user_id, required_glasses, required_water) VALUES (?, 10, 2500)`;
+                let if_first_water = connection.query(first_water, [data.user_id, 8]);
+
                 let updateUser = `UPDATE user_profile set yesHealth = 1 WHERE user_id = ${data.user_id}`;
                 connection.query(updateUser, [], function (err, response) {
                     if (response.affectedRows > 0) {
@@ -182,7 +189,6 @@ const user_diet = (req, res) => {
                     res.send({ msg: e, error: 1 })
                 }
                 else {
-
                     let diet_score = ((rows[0].intake_calories + data.calories) / rows[0].required_calories) * 10;
 
                     let update = `UPDATE diet_tracking SET intake_meals = ${rows[0].intake_meals + 1}, intake_calories = ${rows[0].intake_calories + data.calories}, diet_score = ${diet_score} WHERE user_id = ${data.user_id}`;
@@ -262,4 +268,44 @@ const get_all_diet = (req, res) => {
         }
     });
 }
-module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet }
+
+const get_water_data = (req, res) => {
+    let user = `SELECT * FROM water_track where user_id = ${req.body.user_id}`;
+    let ifUser = connection.query(user, (err, rows) => {
+        if (rows && rows.length > 0) {
+            res.send({ msg: "Water Data Fetched successfully", error: 0, data: rows });
+        }
+        else {
+            res.send({ msg: "The Data does not exist", error: 1 });
+        }
+    });
+}
+
+const update_water_data = (req, res) => {
+    let water = `SELECT * FROM water_track WHERE user_id = ${req.body.user_id}`;
+    connection.query(water, (err, rows) => {
+        if (err) {
+            res.send({ msg: err, error: 1 });
+        }
+        else if (rows && rows.length > 0) {
+
+            let intake_glasses = rows[0].intake_glasses + 1;
+            let intake_water = rows[0].intake_water + 250;
+            // let water_score = 1
+            let update = `UPDATE water_track SET intake_glasses = ?, intake_water = ?, water_score = ? WHERE user_id = ${req.body.user_id}`;
+
+            let if_update = connection.query(update, [intake_glasses, intake_water, intake_glasses], (e, resp) => {
+                if (resp.affectedRows > 0) {
+                    res.send({ msg: "Water Data updated Successfully", error: 0 });
+                } else {
+                    res.send({ msg: "Something went wrong", error: 1 });
+                }
+            })
+        }
+        else {
+            res.send({ msg: "Water data does not exist", error: 1 });
+        }
+    })
+}
+
+module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet, get_water_data, update_water_data }
