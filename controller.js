@@ -291,10 +291,13 @@ const update_water_data = (req, res) => {
 
             let intake_glasses = rows[0].intake_glasses + 1;
             let intake_water = rows[0].intake_water + 250;
-            // let water_score = 1
+            let water_score = rows[0].required_water > intake_water ? intake_glasses : rows[0].water_score - 1;
+
+            console.log(water_score, "water_score");
+
             let update = `UPDATE water_track SET intake_glasses = ?, intake_water = ?, water_score = ? WHERE user_id = ${req.body.user_id}`;
 
-            let if_update = connection.query(update, [intake_glasses, intake_water, intake_glasses], (e, resp) => {
+            let if_update = connection.query(update, [intake_glasses, intake_water, water_score], (e, resp) => {
                 if (resp.affectedRows > 0) {
                     res.send({ msg: "Water Data updated Successfully", error: 0 });
                 } else {
@@ -308,4 +311,32 @@ const update_water_data = (req, res) => {
     })
 }
 
-module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet, get_water_data, update_water_data }
+const getWorkouts = (req, res) => {
+    let workout = `SELECT * FROM workouts_available where work_id = ${req.body.work_id}`;
+    connection.query(workout, (err, rows) => {
+        if (rows && rows.length > 0) {
+            let workout = JSON.parse(rows[0].workout);
+            res.send({ msg: "Water Data Fetched successfully", error: 0, data: rows, workout });
+        }
+        else {
+            res.send({ msg: "The Data does not exist", error: 1 });
+        }
+    });
+}
+
+const selectWorkout = (req, res) => {
+    let workout = `UPDATE user_health SET workout_selected = ${req.body.work_id} WHERE user_id = ${req.body.user_id}`;
+    connection.query(workout, (err, response) => {
+        if(err){
+            res.send({ msg: err, error: 1, });
+        }
+        else if (response && response.affectedRows > 0) {
+            res.send({ msg: "Workout Selected Successfully", error: 0, });
+        }
+        else {
+            res.send({ msg: "Something went wrong", error: 1 });
+        }
+    });
+}
+
+module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet, get_water_data, update_water_data, getWorkouts, selectWorkout }

@@ -16,5 +16,6 @@ router.post('/update_user', jsonParser, control.update_user);
 router.post('/get_all_diet', jsonParser, control.get_all_diet);
 router.post('/get_water_data',jsonParser,control.get_water_data);
 router.post('/update_water_data',jsonParser,control.update_water_data);
-
+router.post('/getWorkouts',jsonParser,control.getWorkouts);
+router.post('/selectWorkout',jsonParser,control.selectWorkout);
 module.exports = router;
