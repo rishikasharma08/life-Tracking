@@ -327,7 +327,7 @@ const getWorkouts = (req, res) => {
 const selectWorkout = (req, res) => {
     let workout = `UPDATE user_health SET workout_selected = ${req.body.work_id} WHERE user_id = ${req.body.user_id}`;
     connection.query(workout, (err, response) => {
-        if(err){
+        if (err) {
             res.send({ msg: err, error: 1, });
         }
         else if (response && response.affectedRows > 0) {
@@ -339,4 +339,75 @@ const selectWorkout = (req, res) => {
     });
 }
 
-module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet, get_water_data, update_water_data, getWorkouts, selectWorkout }
+const getselectWorkout = (req, res) => {
+    let workout = `SELECT * FROM user_health WHERE user_id = ${req.body.user_id}`;
+    connection.query(workout, (err, rows) => {
+        if (err) {
+            res.send({ msg: err, error: 1, });
+        }
+        else if (rows && rows.length > 0 && rows[0].workout_selected != null) {
+            let if_already = `SELECT * FROM workout_track WHERE user_id = ${req.body.user_id} AND date_done >= '${req.body.today_date}' LIMIT 1`;
+            connection.query(if_already, (err, data) => {
+                if (data && data.length > 0) {
+                    res.send({ msg: "You are done with your workout", error: 1 });
+                }
+                else {
+                    let workout = `SELECT * FROM workouts_available where work_id = ${rows[0].workout_selected}`;
+                    connection.query(workout, (err, new_rows) => {
+                        if (new_rows && new_rows.length > 0) {
+                            let workout = JSON.parse(new_rows[0].workout);
+                            res.send({ msg: "Workout Data Fetched successfully", error: 0, data: new_rows, workout });
+                        }
+                        else {
+                            res.send({ msg: "The Data does not exist", error: 1 });
+                        }
+                    });
+                }
+            })
+        }
+        else {
+            res.send({ msg: "Something went wrong", error: 1 });
+        }
+    });
+}
+
+
+const DonewithtWorkout = (req, res) => {
+    let workout = `INSERT INTO workout_track(user_id) VALUES (${req.body.user_id})`;
+    connection.query(workout, (err, response) => {
+        if (err) {
+            res.send({ msg: err, error: 1, });
+        }
+        else if (response.insertId) {
+            let query;
+            let if_work = `SELECT * FROM exercise_track WHERE user_id = ${req.body.user_id}`;
+            connection.query(if_work, (err, data) => {
+                if (err) {
+                    console.log(err);
+                }
+                else if (data && data.length > 0) {
+                    query = `UPDATE exercise_track SET muscle_score = ${data[0].muscle_score + 2} WHERE user_id = ${req.body.user_id}`;
+                }
+                else {
+                    query = `INSERT INTO exercise_track (user_id, muscle_score) VALUES(${req.body.user_id}, 2)`;
+                }
+                connection.query(query, (error, resp) => {
+                    if (error) {
+                        console.log(error);
+                    }
+                    else if (resp.insertId) {
+                        res.send({ msg: "Workout Done Successfully", error: 0, });
+                    }
+                    else {
+                        res.send({ msg: "Something went wrong", error: 1 });
+                    }
+                })
+            })
+        }
+        else {
+            res.send({ msg: "Something went wrong", error: 1 });
+        }
+    });
+}
+
+module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet, get_water_data, update_water_data, getWorkouts, selectWorkout, getselectWorkout, DonewithtWorkout }

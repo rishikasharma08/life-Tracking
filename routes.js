@@ -18,4 +18,6 @@ router.post('/get_water_data',jsonParser,control.get_water_data);
 router.post('/update_water_data',jsonParser,control.update_water_data);
 router.post('/getWorkouts',jsonParser,control.getWorkouts);
 router.post('/selectWorkout',jsonParser,control.selectWorkout);
+router.post('/getselectWorkout',jsonParser,control.getselectWorkout);
+router.post('/DonewithtWorkout',jsonParser,control.DonewithtWorkout);
 module.exports = router;
