@@ -20,4 +20,7 @@ router.post('/getWorkouts',jsonParser,control.getWorkouts);
 router.post('/selectWorkout',jsonParser,control.selectWorkout);
 router.post('/getselectWorkout',jsonParser,control.getselectWorkout);
 router.post('/DonewithtWorkout',jsonParser,control.DonewithtWorkout);
+router.post('/user_wealth',jsonParser,control.wealthData);
+router.post('/update_wealth',jsonParser,control.update_wealth);
+router.post('/get_wealth',jsonParser,control.get_wealth);
 module.exports = router;

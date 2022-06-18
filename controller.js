@@ -138,17 +138,22 @@ const sleepData = (req, res) => {
     let data = {
         user_id: req.body.user_id,
         sleep_time: req.body.sleep_time,
-        wakeup_time: req.body.wakeup_time
+        wakeup_time: req.body.wakeup_time,
+        actual_sleep_hours: req.body.actual_sleep_hours
+        
     }
-    let sleep = `INSERT INTO sleep_track(user_id, sleep_time,wakeup_time) VALUES (?,?,?)`;
-    let ifSleep = connection.query(sleep, [data.user_id, data.sleep_time, data.wakeup_time]);
-
-    if (ifSleep) {
-        res.send("Successfully Inserted");
-    }
-    else {
-        res.send("ERROR");
-    }
+    let sleep = `UPDATE sleep_track SET sleep_time = ?, wakeup_time = ?, actual_sleep_hours = ?  WHERE user_id = ?`;
+    connection.query(sleep, [data.sleep_time, data.wakeup_time, data.actual_sleep_hours, data.user_id], (err, response) => {
+        if (err) {
+            console.log(err);
+        }
+        else if (response.affectedRows > 0) {
+            res.send({ msg: "Your Sleep data stored successfully", error: 0 });
+        }
+        else {
+            res.send({ msg: "Something went wrong", error: 1 });
+        }
+    });
 }
 
 //water track data
@@ -410,4 +415,91 @@ const DonewithtWorkout = (req, res) => {
     });
 }
 
-module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet, get_water_data, update_water_data, getWorkouts, selectWorkout, getselectWorkout, DonewithtWorkout }
+
+const wealthData = (req, res) => {
+    let query = `INSERT INTO user_wealth (total_Income, user_id) VALUES(${req.body.total_Income}, ${req.body.user_id})`;
+    connection.query(query, (err, resp) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+            let queery = `UPDATE user_profile SET yesWealth = 1 WHERE user_id = ${req.body.user_id}`;
+            connection.query(queery, (err, response) => {
+                if (err) {
+                    res.send({ msg: err, error: 1, });
+                }
+                else if (response && response.affectedRows > 0) {
+                    res.send({ msg: "Wealth Data Updated Successfully", error: 0 });
+                }
+                else {
+                    res.send({ msg: "Something went wrong", error: 1 });
+                }
+            });
+        }
+    })
+}
+
+const update_wealth = (req, res) => {
+    let query = `INSERT INTO wealth_records (income, expense, user_id) VALUES(${req.body.income}, ${req.body.expense}, ${req.body.user_id})`;
+
+    connection.query(query, (err, resp) => {
+        if (err) {
+            console.log(err);
+        }
+        else {
+
+            let get = `SELECT * FROM user_wealth WHERE user_id = ${req.body.user_id}`;
+            connection.query(get, (er, rows) => {
+                if (er) {
+                    console.log(er);
+                }
+                else if (rows && rows.length > 0) {
+
+                    let total_inc = Number(req.body.income) + rows[0].total_Income;
+                    let total_exp = Number(req.body.expense) + rows[0].total_expense;
+
+                    let update = `Update user_wealth SET total_Income = ?, total_expense = ? WHERE user_id = ?`;
+                    let if_update = connection.query(update, [total_inc, total_exp, req.body.user_id], (e, resp) => {
+                        if (e) {
+                            console.log(e);
+                        }
+                        else {
+                            res.send({ msg: "Wealth Data Updated Successfully", error: 0 });
+                        }
+                    });
+                }
+                else {
+                    res.send({ msg: "Something Went Wrong", error: 1 });
+                }
+            })
+        }
+    })
+}
+
+const get_wealth = (req, res) => {
+    let query = `SELECT * FROM wealth_records WHERE user_id = ${req.body.user_id}`;
+    console.log(query);
+    connection.query(query, (err, rows) => {
+        if (err) {
+            console.log(err);
+        }
+        else if (rows && rows.length > 0) {
+
+            console.log("hehehe");
+            let sql = `SELECT * FROM user_wealth WHERE user_id = ${req.body.user_id}`;
+            connection.query(sql, (e, resp) => {
+                if (e) {
+                    console.log(e);
+                }
+                else {
+                    res.send({ msg: "Wealth Data Fetched Successfully", error: 0, data: rows, overall_val: resp });
+                }
+            })
+        }
+        else {
+            res.send({ msg: "No records Found!!", error: 1 });
+        }
+    })
+}
+
+module.exports = { add_user, login_user, healthData, sleepData, waterData, user_info, user_diet, update_user, get_all_diet, get_water_data, update_water_data, getWorkouts, selectWorkout, getselectWorkout, DonewithtWorkout, wealthData, update_wealth, get_wealth }
